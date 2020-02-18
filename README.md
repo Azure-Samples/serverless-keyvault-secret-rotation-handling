@@ -11,7 +11,7 @@ products:
 - azure-logic-apps
 ---
 
-# Handling KeyVault secret changes utilized by an Azure Function
+# Handling KeyVault secret rotation changes utilized by an Azure Function
 
 This sample showcases one way to handle when a KeyVault secret used by your Azure Function is "rolled" or updated as part of normal security operations in your organizations.
 
