@@ -9,6 +9,10 @@ provider "azurerm" {
   version = "=1.44.0"
 }
 
+provider "local" {
+	version = "~> 1.4"
+}
+
 # Make client_id, tenant_id, subscription_id and object_id variables
 data "azurerm_client_config" "current" {}
 
@@ -36,7 +40,7 @@ resource "azurerm_resource_group" "rg" {
   name     = "serverless-sample-${var.prefix}"
   location = var.location
   tags = {
-    sample =  "serverless-keyvault-secret-rotation-handling"
+    sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
@@ -50,7 +54,7 @@ resource "azurerm_application_insights" "logging" {
   location            = azurerm_resource_group.rg.location
   application_type    = "web"
   tags = {
-    sample =  "serverless-keyvault-secret-rotation-handling"
+    sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
@@ -60,7 +64,7 @@ resource "azurerm_application_insights" "logging2" {
   location            = azurerm_resource_group.rg.location
   application_type    = "web"
   tags = {
-    sample =  "serverless-keyvault-secret-rotation-handling"
+    sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
@@ -76,7 +80,7 @@ resource "azurerm_storage_account" "fxnstor" {
   account_replication_type = "LRS"
   account_kind             = "StorageV2"
   tags = {
-    sample =  "serverless-keyvault-secret-rotation-handling"
+    sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
@@ -90,7 +94,7 @@ resource "azurerm_app_service_plan" "fxnapp" {
     size = "Y1"
   }
   tags = {
-    sample =  "serverless-keyvault-secret-rotation-handling"
+    sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
@@ -111,7 +115,7 @@ resource "azurerm_function_app" "fxn" {
     ]
   }
   tags = {
-    sample =  "serverless-keyvault-secret-rotation-handling"
+    sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
@@ -157,7 +161,7 @@ resource "azurerm_key_vault" "shared_key_vault" {
     ]
   }
   tags = {
-    sample =  "serverless-keyvault-secret-rotation-handling"
+    sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
@@ -170,7 +174,7 @@ resource "azurerm_key_vault_secret" "logging_app_insights_key" {
   value        = azurerm_application_insights.logging.instrumentation_key
   key_vault_id = azurerm_key_vault.shared_key_vault.id
   tags = {
-    sample =  "serverless-keyvault-secret-rotation-handling"
+    sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
@@ -185,7 +189,7 @@ resource "azurerm_log_analytics_workspace" "loganalytics" {
   sku                 = "PerGB2018"
   retention_in_days   = 30
   tags = {
-    sample =  "serverless-keyvault-secret-rotation-handling"
+    sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
@@ -225,8 +229,8 @@ resource "azurerm_template_deployment" "logicapp" {
   name                = "${var.prefix}-LA-deployment"
   resource_group_name = azurerm_resource_group.rg.name
   deployment_mode     = "Incremental"
-  parameters_body = jsonencode(local.parameters_body)
-  template_body   = <<DEPLOY
+  parameters_body     = jsonencode(local.parameters_body)
+  template_body       = <<DEPLOY
 {
 	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
 	"contentVersion": "1.0.0.0",
@@ -478,14 +482,17 @@ output "AppInsightsKey2" {
 }
 
 resource "local_file" "app_deployment_script" {
+  filename = "./deploy_app.sh"
   content = <<CONTENT
 #!/bin/bash
 
-echo "Setting app insights instrument key on function app ..."
+echo "Setting app insights instrumentation key on function app ..."
 az functionapp config appsettings set -n ${azurerm_function_app.fxn.name} -g ${azurerm_resource_group.rg.name} --settings "APPINSIGHTS_INSTRUMENTATIONKEY=""@Microsoft.KeyVault(SecretUri=https://${azurerm_key_vault.shared_key_vault.name}.vault.azure.net/secrets/${azurerm_key_vault_secret.logging_app_insights_key.name}/)""" > /dev/null
 
 echo "Deploying function code ..."
 cd ../src ; func azure functionapp publish ${azurerm_function_app.fxn.name} --csharp > /dev/null ; cd ../terraform
+
+echo
+echo "Done!"
 CONTENT
-  filename = "./deploy_app.sh"
 }

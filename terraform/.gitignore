@@ -35,3 +35,6 @@ override.tf.json
 # End of https://www.gitignore.io/api/terraform
 
 *.tflog
+
+# This file is created by terraform's deployment for the user to run afterward; ignore it
+deploy_app.sh
