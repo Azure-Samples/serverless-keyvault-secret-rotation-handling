@@ -89,17 +89,17 @@ Type 'yes' and Terraform will work its magic.
 
 ### 6. Add the App Setting for the Application Insights KeyVault secret to the Function App
 
-Once Terraform completes it will output some values. One of which is `run_this_to_connect_function_to_app_insights`. Take this value, it will look like `az functionapp config appsettings set -n bhsamptest2 -g serverless-sample-bhsamptest2 --settings "APPINSIGHTS_INSTRUMENTATIONKEY= ...` and run it in the current terminal window. This adds the App Settings KeyVault reference to the KeyVault secret containing the Application Insights Instrumentation Key for the first App Insights instance.
+An output from the Terraform is a deployment script you must run in order to populate the Function App's application setting for Application Insights as well as actually deploy the Function code. In your VSCode bash terminal window, simply run
 
-> Note: We can't do this as part of Terraform (yet) because it will erase all other App Settings if we deploy via ARM template, and there's a race condition between the Function App and they KeyVault if we try to embed it as part of the Function App's deployment. In a production scenario this would be done as part of the DevOps pipeline being used to execute the Terraform plan.
+```
+./deploy_app.sh
+```
 
-### 7. Deploy the Azure Function code
+from the `terraform/` directory you're in after running `terraform apply`.
 
-The other output from terraform is the Azure Functions CLI command you need to run to deploy the Function app also contained within the sample. Doing this will issue a full publish out to Azure to the Function App slot created by Terraform.
+> Note: We can't set the APPINSIGHTS_INSTRUMENTATIONKEY value via Terraform (yet) because it will erase all other App Settings if we deploy via ARM template, and there's a race condition between the Function App and they KeyVault if we try to embed it as part of the Function App's deployment. In a production scenario this would be done as part of the DevOps pipeline being used to execute the Terraform plan. Likewise, the DevOps pipeline would build & deploy the Function App.
 
-> Note: In a production scenario this would be done as part of the DevOps pipeline being used to execute the Terraform plan.
-
-### 8. Observe the outcome
+### 7. Observe the outcome
 
 #### The Azure Function
 
