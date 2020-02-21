@@ -477,10 +477,15 @@ output "AppInsightsKey2" {
   value = azurerm_application_insights.logging2.instrumentation_key
 }
 
-output "run_this_to_connect_function_to_app_insights" {
-  value = "az functionapp config appsettings set -n ${azurerm_function_app.fxn.name} -g ${azurerm_resource_group.rg.name} --settings \"APPINSIGHTS_INSTRUMENTATIONKEY=\"\"@Microsoft.KeyVault(SecretUri=https://${azurerm_key_vault.shared_key_vault.name}.vault.azure.net/secrets/${azurerm_key_vault_secret.logging_app_insights_key.name}/)\"\"\" > /dev/null"
-}
+resource "local_file" "app_deployment_script" {
+  content = <<CONTENT
+#!/bin/bash
 
-output "run_this_to_deploy_function_app" {
-  value = "cd ../src ; func azure functionapp publish ${azurerm_function_app.fxn.name} --csharp ; cd ../terraform"
+echo "Setting app insights instrument key on function app ..."
+az functionapp config appsettings set -n ${azurerm_function_app.fxn.name} -g ${azurerm_resource_group.rg.name} --settings "APPINSIGHTS_INSTRUMENTATIONKEY=""@Microsoft.KeyVault(SecretUri=https://${azurerm_key_vault.shared_key_vault.name}.vault.azure.net/secrets/${azurerm_key_vault_secret.logging_app_insights_key.name}/)""" > /dev/null
+
+echo "Deploying function code ..."
+cd ../src ; func azure functionapp publish ${azurerm_function_app.fxn.name} --csharp > /dev/null ; cd ../terraform
+CONTENT
+  filename = "./deploy_app.sh"
 }

@@ -53,7 +53,7 @@ RUN echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(lsb
         && apt-get install -y azure-cli;
 
 #Install Terraform
-ARG TERRAFORM_VERSION=0.12.20
+ARG TERRAFORM_VERSION=0.12.21
 ARG TFLINT_VERSION=0.13.2
 RUN mkdir -p /tmp/docker-downloads \
         && curl -sSL -o /tmp/docker-downloads/terraform.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
