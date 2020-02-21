@@ -36,7 +36,7 @@ resource "azurerm_resource_group" "rg" {
   name     = "serverless-sample-${var.prefix}"
   location = var.location
   tags = {
-    sample =  "serverless-keyvault-secret-rotation-handling"
+    sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
@@ -50,7 +50,7 @@ resource "azurerm_application_insights" "logging" {
   location            = azurerm_resource_group.rg.location
   application_type    = "web"
   tags = {
-    sample =  "serverless-keyvault-secret-rotation-handling"
+    sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
@@ -60,7 +60,7 @@ resource "azurerm_application_insights" "logging2" {
   location            = azurerm_resource_group.rg.location
   application_type    = "web"
   tags = {
-    sample =  "serverless-keyvault-secret-rotation-handling"
+    sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
@@ -76,7 +76,7 @@ resource "azurerm_storage_account" "fxnstor" {
   account_replication_type = "LRS"
   account_kind             = "StorageV2"
   tags = {
-    sample =  "serverless-keyvault-secret-rotation-handling"
+    sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
@@ -90,7 +90,7 @@ resource "azurerm_app_service_plan" "fxnapp" {
     size = "Y1"
   }
   tags = {
-    sample =  "serverless-keyvault-secret-rotation-handling"
+    sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
@@ -111,7 +111,7 @@ resource "azurerm_function_app" "fxn" {
     ]
   }
   tags = {
-    sample =  "serverless-keyvault-secret-rotation-handling"
+    sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
@@ -157,7 +157,7 @@ resource "azurerm_key_vault" "shared_key_vault" {
     ]
   }
   tags = {
-    sample =  "serverless-keyvault-secret-rotation-handling"
+    sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
@@ -170,7 +170,7 @@ resource "azurerm_key_vault_secret" "logging_app_insights_key" {
   value        = azurerm_application_insights.logging.instrumentation_key
   key_vault_id = azurerm_key_vault.shared_key_vault.id
   tags = {
-    sample =  "serverless-keyvault-secret-rotation-handling"
+    sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
@@ -185,7 +185,7 @@ resource "azurerm_log_analytics_workspace" "loganalytics" {
   sku                 = "PerGB2018"
   retention_in_days   = 30
   tags = {
-    sample =  "serverless-keyvault-secret-rotation-handling"
+    sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
@@ -225,8 +225,8 @@ resource "azurerm_template_deployment" "logicapp" {
   name                = "${var.prefix}-LA-deployment"
   resource_group_name = azurerm_resource_group.rg.name
   deployment_mode     = "Incremental"
-  parameters_body = jsonencode(local.parameters_body)
-  template_body   = <<DEPLOY
+  parameters_body     = jsonencode(local.parameters_body)
+  template_body       = <<DEPLOY
 {
 	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
 	"contentVersion": "1.0.0.0",
@@ -477,10 +477,12 @@ output "AppInsightsKey2" {
   value = azurerm_application_insights.logging2.instrumentation_key
 }
 
-output "run_this_to_connect_function_to_app_insights" {
-  value = "az functionapp config appsettings set -n ${azurerm_function_app.fxn.name} -g ${azurerm_resource_group.rg.name} --settings \"APPINSIGHTS_INSTRUMENTATIONKEY=\"\"@Microsoft.KeyVault(SecretUri=https://${azurerm_key_vault.shared_key_vault.name}.vault.azure.net/secrets/${azurerm_key_vault_secret.logging_app_insights_key.name}/)\"\"\" > /dev/null"
-}
+resource "local_file" "app_deployment_script" {
+  content = <<CONTENT
+#!/bin/bash
 
-output "run_this_to_deploy_function_app" {
-  value = "cd ../src ; func azure functionapp publish ${azurerm_function_app.fxn.name} --csharp ; cd ../terraform"
+az functionapp config appsettings set -n ${azurerm_function_app.fxn.name} -g ${azurerm_resource_group.rg.name} --settings "APPINSIGHTS_INSTRUMENTATIONKEY=""@Microsoft.KeyVault(SecretUri=https://${azurerm_key_vault.shared_key_vault.name}.vault.azure.net/secrets/${azurerm_key_vault_secret.logging_app_insights_key.name}/)""" > /dev/null
+cd ../src ; func azure functionapp publish ${azurerm_function_app.fxn.name} --csharp ; cd ../terraform
+CONTENT
+  filename = "./deploy_app.sh"
 }
