@@ -15,10 +15,10 @@
 		"mauve.terraform",
 		"ms-vscode.azurecli",
 		"ms-azuretools.vscode-docker"
-	]
+	],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "dotnet restore",
+	"postCreateCommand": "dotnet restore ./src",
 
 	// Uncomment to connect as a non-root user. See https://aka.ms/vscode-remote/containers/non-root.
 	// "remoteUser": "vscode"
