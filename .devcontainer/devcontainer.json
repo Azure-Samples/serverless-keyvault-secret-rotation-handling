@@ -11,7 +11,7 @@
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
 		"ms-azuretools.vscode-azurefunctions",
-		"ms-vscode.csharp",
+		"ms-dotnettools.csharp",
 		"mauve.terraform",
 		"ms-vscode.azurecli",
 		"ms-azuretools.vscode-docker"
