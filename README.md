@@ -4,6 +4,8 @@ languages:
 - csharp
 - hcl
 products:
+- azure
+- dotnet
 - azure-application-insights
 - azure-event-grid
 - azure-functions
