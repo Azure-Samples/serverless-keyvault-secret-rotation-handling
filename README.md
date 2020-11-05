@@ -97,6 +97,8 @@ An output from the Terraform is a deployment script you must run in order to pop
 ./deploy_app.sh
 ```
 
+> Note: You may need to refresh the files in the Explorer Panel in VS Code to see the generated `deploy_app.sh` file under `terraform` folder.
+
 from the `terraform/` directory you're in after running `terraform apply`.
 
 > Note: We can't set the APPINSIGHTS_INSTRUMENTATIONKEY value via Terraform (yet) because it will erase all other App Settings if we deploy via ARM template, and there's a race condition between the Function App and they KeyVault if we try to embed it as part of the Function App's deployment. In a production scenario this would be done as part of the DevOps pipeline being used to execute the Terraform plan. Likewise, the DevOps pipeline would build & deploy the Function App.
