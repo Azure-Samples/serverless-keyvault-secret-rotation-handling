@@ -107,7 +107,7 @@ from the `terraform/` directory you're in after running `terraform apply`.
 
 #### The Azure Function
 
-In your portal, go to the newly-created Azure Function. Its name will be the `<prefix>` value you put in during the Terraform deployment.
+In your portal, go to the newly-created Azure Function. Its name will be the `<prefix>-serverless-functionapp` value you put in during the Terraform deployment.
 
 There are a few things to notice:
 
@@ -178,7 +178,7 @@ which ensures that even if somebody were to submit Function code that attempted 
 
 #### The Logic App
 
-In your portal, go to the newly-created Logic App. Its name will be `<prefix>-LA` where `<prefix>` is the value you put in during the Terraform deployment.
+In your portal, go to the newly-created Logic App. Its name will be `<prefix>-serverless-la` where `<prefix>` is the value you put in during the Terraform deployment.
 
 ##### Execution Logic
 
@@ -208,7 +208,7 @@ The important part of the Logic App's configuration is that our Terraform deploy
 
 #### Key Vault
 
-In your portal, go to the newly-created Key Vault. Its name will be the `<prefix>` value you put in during the Terraform deployment.
+In your portal, go to the newly-created Key Vault. Its name will be the `<prefix>-serverless-kv` value you put in during the Terraform deployment.
 
 The important bits of the Key Vault for this sample are the `Events` and `Access Policies` area
 
@@ -228,11 +228,11 @@ In order for the Function App to be able to read the values of Key Vault secrets
 
 ## Bringing it all together
 
-If you open the Live Stream for the first Application Insights instance (without the `-2` suffix) you'll see the Function happily logging messages every 5 seconds or so:
+If you open the Live Stream for the first Application Insights instance (with the `-first` suffix) you'll see the Function happily logging messages every 5 seconds or so:
 
 ![](doc/appinsightslivestream1.png)
 
-Moving over to the secondary Application Insights, you'll probably see a screen like this:
+Moving over to the secondary Application Insights (with the `-second` suffix), you'll probably see a screen like this:
 
 ![](doc/appinsights2dead.png)
 
