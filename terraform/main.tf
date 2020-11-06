@@ -37,7 +37,7 @@ variable "sp_client_secret" {
 }
 
 resource "azurerm_resource_group" "rg" {
-  name     = "serverless-sample-${var.prefix}"
+  name     = "${var.prefix}-serverless-sample"
   location = var.location
   tags = {
     sample = "serverless-keyvault-secret-rotation-handling"
@@ -49,7 +49,7 @@ resource "azurerm_resource_group" "rg" {
 ##################################################################################
 
 resource "azurerm_application_insights" "logging" {
-  name                = var.prefix
+  name                = "${var.prefix}-serverless-ai-first"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   application_type    = "web"
@@ -59,7 +59,7 @@ resource "azurerm_application_insights" "logging" {
 }
 
 resource "azurerm_application_insights" "logging2" {
-  name                = "${var.prefix}-2"
+  name                = "${var.prefix}-serverless-ai-second"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   application_type    = "web"
@@ -85,7 +85,7 @@ resource "azurerm_storage_account" "fxnstor" {
 }
 
 resource "azurerm_app_service_plan" "fxnapp" {
-  name                = var.prefix
+  name                = "${var.prefix}-serverless-serviceplan"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   kind                = "functionapp"
@@ -99,7 +99,7 @@ resource "azurerm_app_service_plan" "fxnapp" {
 }
 
 resource "azurerm_function_app" "fxn" {
-  name                      = var.prefix
+  name                      = "${var.prefix}-serverless-functionapp"
   resource_group_name       = azurerm_resource_group.rg.name
   location                  = azurerm_resource_group.rg.location
   app_service_plan_id       = azurerm_app_service_plan.fxnapp.id
@@ -124,7 +124,7 @@ resource "azurerm_function_app" "fxn" {
 ##################################################################################
 
 resource "azurerm_key_vault" "shared_key_vault" {
-  name                = var.prefix
+  name                = "${var.prefix}-serverless-kv"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   tenant_id           = data.azurerm_client_config.current.tenant_id
@@ -183,7 +183,7 @@ resource "azurerm_key_vault_secret" "logging_app_insights_key" {
 ##################################################################################
 
 resource "azurerm_log_analytics_workspace" "loganalytics" {
-  name                = "${var.prefix}-law"
+  name                = "${var.prefix}-serverless-law"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   sku                 = "PerGB2018"
@@ -196,7 +196,7 @@ resource "azurerm_log_analytics_workspace" "loganalytics" {
 locals {
   parameters_body = {
     logicapp_keyvaulthandler_name = {
-      value = "${var.prefix}-LA"
+      value = "${var.prefix}-serverless-la"
     },
     vaults_rollingvault_externalid = {
       value = azurerm_key_vault.shared_key_vault.id
@@ -226,7 +226,7 @@ locals {
 }
 
 resource "azurerm_template_deployment" "logicapp" {
-  name                = "${var.prefix}-LA-deployment"
+  name                = "${var.prefix}-serverless-la-deployment"
   resource_group_name = azurerm_resource_group.rg.name
   deployment_mode     = "Incremental"
   parameters_body     = jsonencode(local.parameters_body)
@@ -473,11 +473,11 @@ resource "azurerm_role_assignment" "laToFunction" {
 # Outputs
 ##################################################################################
 
-output "AppInsightsKey1" {
+output "AppInsightsKey-First" {
   value = azurerm_application_insights.logging.instrumentation_key
 }
 
-output "AppInsightsKey2" {
+output "AppInsightsKey-Second" {
   value = azurerm_application_insights.logging2.instrumentation_key
 }
 
