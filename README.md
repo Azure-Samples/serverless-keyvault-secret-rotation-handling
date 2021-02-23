@@ -17,7 +17,7 @@ products:
 
 This sample showcases one way to handle when a KeyVault secret used by your Azure Function is "rolled" or updated as part of normal security operations in your organizations.
 
-Typically, organizations require that any secrets, keys, etc are stored in KeyVault and rotated either on-demand (in event of a breach) or as part of routing policy.
+Typically, organizations require that any secrets, keys, etc are stored in KeyVault and rotated either on-demand (in event of a breach) or as part of routine policy.
 
 In these cases, your Azure Function may also be using these KeyVault secrets, in particular via <a href="https://docs.microsoft.com/en-us/azure/app-service/app-service-key-vault-references" target="_blank">App Setting KeyVault References</a>. In this scenario, the Azure Function must be told to "re-fetch" the value of the KeyVault secret to get the updated value. In this sample you'll learn how this can be done using a combination of Event Grid and Logic Apps.
 
