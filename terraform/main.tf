@@ -1,16 +1,23 @@
 #Set the terraform required version
 terraform {
-  required_version = ">= 0.12.6"
+  required_version = "~> 1.0.0"
+  # Configure the Azure Provider
+  required_providers {
+    # It is recommended to pin to a given version of the Provider
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 2.62.0"
+    }
+    local = {
+      version = "~> 1.4"
+    }
+  }
 }
 
 # Configure the Azure Provider
 provider "azurerm" {
   # It is recommended to pin to a given version of the Provider
-  version = "=1.44.0"
-}
-
-provider "local" {
-	version = "~> 1.4"
+  features {}
 }
 
 # Make client_id, tenant_id, subscription_id and object_id variables
@@ -99,12 +106,13 @@ resource "azurerm_app_service_plan" "fxnapp" {
 }
 
 resource "azurerm_function_app" "fxn" {
-  name                      = "${var.prefix}-serverless-functionapp"
-  resource_group_name       = azurerm_resource_group.rg.name
-  location                  = azurerm_resource_group.rg.location
-  app_service_plan_id       = azurerm_app_service_plan.fxnapp.id
-  storage_connection_string = azurerm_storage_account.fxnstor.primary_connection_string
-  version                   = "~3"
+  name                       = "${var.prefix}-serverless-functionapp"
+  resource_group_name        = azurerm_resource_group.rg.name
+  location                   = azurerm_resource_group.rg.location
+  app_service_plan_id        = azurerm_app_service_plan.fxnapp.id
+  storage_account_name       = azurerm_storage_account.fxnstor.name
+  storage_account_access_key = azurerm_storage_account.fxnstor.primary_access_key
+  version                    = "~3"
   identity {
     type = "SystemAssigned"
   }
@@ -474,16 +482,18 @@ resource "azurerm_role_assignment" "laToFunction" {
 ##################################################################################
 
 output "AppInsightsKey-First" {
-  value = azurerm_application_insights.logging.instrumentation_key
+  value     = azurerm_application_insights.logging.instrumentation_key
+  sensitive = true
 }
 
 output "AppInsightsKey-Second" {
-  value = azurerm_application_insights.logging2.instrumentation_key
+  value     = azurerm_application_insights.logging2.instrumentation_key
+  sensitive = true
 }
 
 resource "local_file" "app_deployment_script" {
   filename = "./deploy_app.sh"
-  content = <<CONTENT
+  content  = <<CONTENT
 #!/bin/bash
 
 echo "Setting app insights instrumentation key on function app ..."
@@ -491,6 +501,9 @@ az functionapp config appsettings set -n ${azurerm_function_app.fxn.name} -g ${a
 
 echo "Deploying function code ..."
 cd ../src ; func azure functionapp publish ${azurerm_function_app.fxn.name} --csharp > /dev/null ; cd ../terraform
+
+echo "Application Insights keys:"
+terraform state pull | jq -r '.outputs | to_entries | .[] | { instance: .key, key: .value.value } '
 
 echo
 echo "Done!"

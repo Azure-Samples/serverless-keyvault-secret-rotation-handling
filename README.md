@@ -71,7 +71,6 @@ In the terminal window of VSCode issue the following commands:
 
 ```sh
 cd terraform
-terraform init
 terraform apply -var prefix=<a unique prefix for you> -var sp_client_id=<appId from above> -var sp_client_secret=<password from above>
 ```
 
@@ -93,7 +92,7 @@ Type 'yes' and Terraform will work its magic.
 
 An output from the Terraform is a deployment script you must run in order to populate the Function App's application setting for Application Insights as well as actually deploy the Function code. In your VSCode bash terminal window, simply run
 
-```
+```bash
 ./deploy_app.sh
 ```
 
