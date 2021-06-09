@@ -110,25 +110,21 @@ In your portal, go to the newly-created Azure Function. Its name will be the `<p
 
 There are a few things to notice:
 
-1. The Function app has one Function: `Timer5sec`
-
-![](doc/functioncontent.png)
-
-2. Under `Configuration` you'll find the Application Setting KeyVault reference for `APPINSIGHTS_INSTRUMENTATIONKEY`
-
-![](doc/configuration.png)
-
-![](doc/appinsightssetting.png)
+- The Function app has one Function: `Timer5sec` \
+![Screenshot of Functions list in Azure Portal](doc/functioncontent.png)
+- Under `Configuration` you'll find the Application Setting KeyVault reference for `APPINSIGHTS_INSTRUMENTATIONKEY` \
+![Location/appearance of 'Configuration' option in Azure Portal](doc/configuration.png) \
+![Screenshot of adding an Application Insights setting to an Azure Function](doc/appinsightssetting.png) \
 
 > Note: It's important to note the **lack** of a secret version specifier in the URL. By using this method, we always retrieve the latest version of the secret, enabling the behavior we want. Alternatively, you could create a process that *updates* the `APPINSIGHTS_INSTRUMENTATIONKEY` app setting with the URL which comes through as part of the Event Grid event for `NewSecretVersion`.
 
 > Notice the `Status` marker on the reference; this tells you the connection between the Function App and KeyVault is all good, and it's able to pull the value from KeyVault as intended
 
-3. In the IAM (Access Control) area of the Function App, under Role Assignments, you'll find an entry for the Logic App.
+- In the IAM (Access Control) area of the Function App, under Role Assignments, you'll find an entry for the Logic App.
 
-![](doc/iamlink.png)
+![Location of IAM option on an Azure Function app](doc/iamlink.png)
 
-![](doc/lawebsitecontrib.png)
+![Setting up the Logic App with Website Contributor role](doc/lawebsitecontrib.png)
 
 This exists to give the Logic App necessary permissions to issue the soft-reset request to the Function App. Without it, the Azure REST API request made by the Logic App receives a `403 FORBIDDEN` response.
 
@@ -153,11 +149,11 @@ and the fact that the Logic App was created with a Managed Service Identity assi
 },
 ```
 
-4. The Function App itself has a Managed Service Identity:
+- The Function App itself has a Managed Service Identity:
 
-![](doc/identityconfiglabel.png)
+![Location of 'Identity' option for an Azure Function](doc/identityconfiglabel.png)
 
-![](doc/fxnidentity.png)
+![Identity area of an Azure Function with Managed Identity enabled](doc/fxnidentity.png)
 
 This is part of setting up the Azure Function to use KeyVault references, and enables KeyVault to restrict access to keys, secrets, and other things to only certain identities. This access is applied by this part of our Terraform deployment:
 
@@ -185,7 +181,7 @@ Click `Logic App Designer` in the left-hand portion of the blade so you can see 
 
 Clicking on the titlebar of each block in the Logic App will expand out its contents to look like this:
 
-![](doc/logicapp.png)
+![Logic app which rotates the keys upon the Event Grid event](doc/logicapp.png)
 
 Let's examine each block of Logic.
 
@@ -203,7 +199,7 @@ Let's examine each block of Logic.
 
 The important part of the Logic App's configuration is that our Terraform deployment assigned it a Managed Identity. You can see this in the `Identity` area of the Logic App:
 
-![](doc/laidentity.png)
+![Logic App's configuration with Managed Identity enabled](doc/laidentity.png)
 
 #### Key Vault
 
@@ -215,7 +211,7 @@ The important bits of the Key Vault for this sample are the `Events` and `Access
 
 Earlier, you saw the Logic App Event Grid trigger configured to receive events from the Key Vault resource. When Logic App is deployed with this connector in place, it automatically creates the Event Grid subscription from the Key Vault instance. Click the `Events` area of your KeyVault and notice the `Subscriptions` area near the bottom:
 
-![](doc/kveventsubs.png)
+![Keyvault Event Grid events area](doc/kveventsubs.png)
 
 Here you see the Logic App registered itself as a webhook receiver for events from the KeyVault.
 
@@ -223,16 +219,16 @@ Here you see the Logic App registered itself as a webhook receiver for events fr
 
 In order for the Function App to be able to read the values of Key Vault secrets, you remember, our Terraform granted it this permission in the configuration of the KeyVault. You can see this in the Access Policies area:
 
-![](doc/kvaccesspolicies.png)
+![Defined KeyVault access policies](doc/kvaccesspolicies.png)
 
 ## Bringing it all together
 
 If you open the Live Stream for the first Application Insights instance (with the `-first` suffix) you'll see the Function happily logging messages every 5 seconds or so:
 
-![](doc/appinsightslivestream1.png)
+![Active Application Insights instance](doc/appinsightslivestream1.png)
 
 Moving over to the secondary Application Insights (with the `-second` suffix), you'll probably see a screen like this:
 
-![](doc/appinsights2dead.png)
+![Newly-inactive Application Insights instance](doc/appinsights2dead.png)
 
 But if you take the Instrumentation Key from the secondary instance and update the KeyVault secret `appinsights-instrumentationkey` with it, you'll see that behavior flip as the event propagates through the system and the Function App is soft-reset to pick up the new value from KeyVault!
