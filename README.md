@@ -25,13 +25,13 @@ In these cases, your Azure Function may also be using these KeyVault secrets, in
 
 - When a KeyVault secret is updated, it emits a `NewSecretVersion` event to subscribers of the <a href="https://docs.microsoft.com/en-us/azure/event-grid/event-schema-key-vault" target="_blank">Key Vault's Event Grid messages</a>.
 - To field these messages, Logic Apps can be connected as a subscriber to the KeyVault instance, and even filter for this message type.
-- Azure Functions' <a href="https://docs.microsoft.com/en-us/rest/api/appservice/WebApps/Restart#uri-parameters" target="_blank">REST API allows for a `soft-restart` command</a> which forces Configuration Values to be reloaded; this causes the KeyVault reference to be re-evaluated and the new value of the secret to be reflected in the Function's runtime.
+- Using Azure Functions' <a href="https://docs.microsoft.com/en-us/rest/api/appservice/web-apps/update-application-settings" target="_blank">Configuration REST API</a> to update the KeyVault reference to point to the newly-created Secret Version causes the host to restart & re-evaluate the app setting. The new value of the secret will then be reflected in the Function's runtime.
 
 ## The Implementation
 
 In this sample, we deploy two different Application Insights instances. The first instance's Instrumentation Key is put into a KeyVault secret and the Azure Function uses a KeyVault reference to it as the `APPINSIGHTS_INSTRUMENTATIONKEY` application setting. The Azure Function's binding is a Timer Trigger which executes every ~5 seconds and simply posts a message with the current UTC time to the Application Insights instance to which it's talking.
 
-When we change the value of the KeyVault secret to the second Application Insights instance's Instrumentation Key, you'll see the event get fired to the Logic App, and the Logic App will issue the soft-restart request to the Azure Function. By having the Live Stream tab for both Application Insights instances open at the same time, you can see one cease to receive message while the other begins to receive them. This completes the sequence of events triggered by simply changing the secret value in KeyVault.
+When we change the value of the KeyVault secret to the second Application Insights instance's Instrumentation Key, you'll see the event get fired to the Logic App, and the Logic App will update the App Setting on the Azure Function. By having the Live Stream tab for both Application Insights instances open at the same time, you can see one cease to receive message while the other begins to receive them. This completes the sequence of events triggered by simply changing the secret value in KeyVault.
 
 ## Deploying the sample
 
@@ -191,9 +191,11 @@ Let's examine each block of Logic.
 
 3. We use this 'if' statement (aka Condition block) to say "if the subject of the event we got (which corresponds to the name of the secret that fired the `NewSecretVersion` event) is in our `keysToWatch` array variable" so we can ignore changes to other secrets in the same vault.
 
-4. Here we use the Azure REST API to invoke the `softRestart` of the Function App we created.
+4. Here we use the Azure REST API to get the list of current App Settings for the Function App because when we update, we must give _all_ app setting values, not just the changed ones.
 
-5. The authentication of the previous request comes from the Managed Identity we've assigned the Logic App, and the User Access role pointed out earlier which has `Website Contributor` access to the Function App. If that User Access Role is missing, this block of the Logic App will fail.
+5. We parse the response of the `GET` call and issue the `PUT` call to Settings while using Logic Apps' `setProperty` function to set the value of the `APPINSIGHTS_INSTRUMENTATIONKEY` setting to the new value.
+
+You'll notice both REST calls use Managed Identity authentication taking the Identity we've assigned the Logic App, and the User Access role pointed out earlier which has `Website Contributor` access to the Function App. If that User Access Role is missing, this block of the Logic App will fail.
 
 ##### Configuration
 
