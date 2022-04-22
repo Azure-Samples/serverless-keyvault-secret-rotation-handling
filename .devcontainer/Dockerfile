@@ -3,12 +3,12 @@
 # Licensed under the MIT License. See https://go.microsoft.com/fwlink/?linkid=2090316 for license information.
 #-------------------------------------------------------------------------------------------------------------
 
-FROM mcr.microsoft.com/azure-functions/dotnet:3.0-dotnet3-core-tools
+FROM mcr.microsoft.com/azure-functions/dotnet:4-dotnet6-core-tools
 
 # [Optional] Install Terrafrom
 ARG INSTALL_TERRAFORM="true"
-ARG TERRAFORM_VERSION=1.0.0
-ARG TFLINT_VERSION=0.29.0
+ARG TERRAFORM_VERSION=1.1.9
+ARG TFLINT_VERSION=0.35.0
 
 # Avoid warnings by switching to noninteractive
 ENV DEBIAN_FRONTEND=noninteractive
@@ -29,7 +29,7 @@ RUN apt-get update \
         && curl -sSL -o /tmp/docker-downloads/terraform.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
         && unzip /tmp/docker-downloads/terraform.zip \
         && mv terraform /usr/local/bin \
-        && curl -sSL -o /tmp/docker-downloads/tflint.zip https://github.com/wata727/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip \
+        && curl -sSL -o /tmp/docker-downloads/tflint.zip https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip \
         && unzip /tmp/docker-downloads/tflint.zip \
         && mv tflint /usr/local/bin \
         && cd ~ \ 

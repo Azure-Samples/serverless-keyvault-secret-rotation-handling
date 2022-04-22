@@ -1,12 +1,12 @@
 #Set the terraform required version
 terraform {
-  required_version = "~> 1.0.0"
+  required_version = "~> 1.0"
   # Configure the Azure Provider
   required_providers {
     # It is recommended to pin to a given version of the Provider
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 2.62.0"
+      version = "~> 3.0.0"
     }
     local = {
       version = "~> 1.4"
@@ -17,7 +17,11 @@ terraform {
 # Configure the Azure Provider
 provider "azurerm" {
   # It is recommended to pin to a given version of the Provider
-  features {}
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+  }
 }
 
 # Make client_id, tenant_id, subscription_id and object_id variables
@@ -55,11 +59,34 @@ resource "azurerm_resource_group" "rg" {
 # AppInsights
 ##################################################################################
 
+resource "azurerm_log_analytics_workspace" "loganalyticsai1" {
+  name                = "${var.prefix}-serverless-law-ai-first"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+  tags = {
+    sample = "serverless-keyvault-secret-rotation-handling"
+  }
+}
+
 resource "azurerm_application_insights" "logging" {
   name                = "${var.prefix}-serverless-ai-first"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
+  workspace_id        = azurerm_log_analytics_workspace.loganalyticsai1.id
   application_type    = "web"
+  tags = {
+    sample = "serverless-keyvault-secret-rotation-handling"
+  }
+}
+
+resource "azurerm_log_analytics_workspace" "loganalyticsai2" {
+  name                = "${var.prefix}-serverless-law-ai-second"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
   tags = {
     sample = "serverless-keyvault-secret-rotation-handling"
   }
@@ -69,6 +96,7 @@ resource "azurerm_application_insights" "logging2" {
   name                = "${var.prefix}-serverless-ai-second"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
+  workspace_id        = azurerm_log_analytics_workspace.loganalyticsai2.id
   application_type    = "web"
   tags = {
     sample = "serverless-keyvault-secret-rotation-handling"
@@ -91,28 +119,27 @@ resource "azurerm_storage_account" "fxnstor" {
   }
 }
 
-resource "azurerm_app_service_plan" "fxnapp" {
+resource "azurerm_service_plan" "fxnapp" {
   name                = "${var.prefix}-serverless-serviceplan"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
-  kind                = "functionapp"
-  sku {
-    tier = "Dynamic"
-    size = "Y1"
-  }
+  sku_name            = "Y1"
+  os_type             = "Windows"
+
   tags = {
     sample = "serverless-keyvault-secret-rotation-handling"
   }
 }
 
-resource "azurerm_function_app" "fxn" {
-  name                       = "${var.prefix}-serverless-functionapp"
-  resource_group_name        = azurerm_resource_group.rg.name
-  location                   = azurerm_resource_group.rg.location
-  app_service_plan_id        = azurerm_app_service_plan.fxnapp.id
-  storage_account_name       = azurerm_storage_account.fxnstor.name
-  storage_account_access_key = azurerm_storage_account.fxnstor.primary_access_key
-  version                    = "~3"
+resource "azurerm_windows_function_app" "fxn" {
+  name                        = "${var.prefix}-serverless-functionapp"
+  resource_group_name         = azurerm_resource_group.rg.name
+  location                    = azurerm_resource_group.rg.location
+  service_plan_id             = azurerm_service_plan.fxnapp.id
+  storage_account_name        = azurerm_storage_account.fxnstor.name
+  storage_account_access_key  = azurerm_storage_account.fxnstor.primary_access_key
+  functions_extension_version = "~4"
+  site_config {}
   identity {
     type = "SystemAssigned"
   }
@@ -145,28 +172,28 @@ resource "azurerm_key_vault" "shared_key_vault" {
     tenant_id = data.azurerm_client_config.current.tenant_id
 
     key_permissions = [
-      "get",
-      "list",
-      "create",
-      "delete"
+      "Get",
+      "List",
+      "Create",
+      "Delete"
     ]
 
     secret_permissions = [
-      "get",
-      "list",
-      "set",
-      "delete",
-      "purge"
+      "Get",
+      "List",
+      "Set",
+      "Delete",
+      "Purge"
     ]
   }
 
   # access policy for azure function
   access_policy {
-    object_id = azurerm_function_app.fxn.identity[0].principal_id
+    object_id = azurerm_windows_function_app.fxn.identity[0].principal_id
     tenant_id = data.azurerm_client_config.current.tenant_id
 
     secret_permissions = [
-      "get"
+      "Get"
     ]
   }
   tags = {
@@ -192,7 +219,7 @@ resource "azurerm_key_vault_secret" "logging_app_insights_key" {
 ##################################################################################
 
 resource "azurerm_log_analytics_workspace" "loganalytics" {
-  name                = "${var.prefix}-serverless-law"
+  name                = "${var.prefix}-serverless-law-logicapp"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   sku                 = "PerGB2018"
@@ -223,7 +250,7 @@ locals {
       value = azurerm_log_analytics_workspace.loganalytics.id
     },
     fxn_id = {
-      value = azurerm_function_app.fxn.id
+      value = azurerm_windows_function_app.fxn.id
     },
     keysToWatch = {
       value = [azurerm_key_vault_secret.logging_app_insights_key.name]
@@ -237,12 +264,12 @@ locals {
   }
 }
 
-resource "azurerm_template_deployment" "logicapp" {
+resource "azurerm_resource_group_template_deployment" "logicapp" {
   name                = "${var.prefix}-serverless-la-deployment"
   resource_group_name = azurerm_resource_group.rg.name
   deployment_mode     = "Incremental"
-  parameters_body     = jsonencode(local.parameters_body)
-  template_body       = <<DEPLOY
+  parameters_content      = jsonencode(local.parameters_body)
+  template_content         = <<LOGICAPP
 {
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
@@ -562,22 +589,22 @@ resource "azurerm_template_deployment" "logicapp" {
         }
     ],
     "outputs": {
-        "LogicAppServicePrincipalId": {
+        "logicAppServicePrincipalId": {
             "type": "string",
             "value": "[reference(concat('Microsoft.Logic/workflows/',parameters('logicapp_keyvaulthandler_name')), '2019-05-01', 'Full').identity.principalId]"
         }
     }
 }
-DEPLOY
+LOGICAPP
 }
 
 ##################################################################################
 # Role Assignment
 ##################################################################################
 resource "azurerm_role_assignment" "laToFunction" {
-  scope                = azurerm_function_app.fxn.id
+  scope                = azurerm_windows_function_app.fxn.id
   role_definition_name = "Website Contributor"
-  principal_id         = azurerm_template_deployment.logicapp.outputs["logicAppServicePrincipalId"]
+  principal_id         = jsondecode(azurerm_resource_group_template_deployment.logicapp.output_content).logicAppServicePrincipalId.value
 }
 
 ##################################################################################
@@ -600,10 +627,11 @@ resource "local_file" "app_deployment_script" {
 #!/bin/bash
 
 echo "Setting app insights instrumentation key on function app ..."
-az functionapp config appsettings set -n ${azurerm_function_app.fxn.name} -g ${azurerm_resource_group.rg.name} --settings "APPINSIGHTS_INSTRUMENTATIONKEY=""@Microsoft.KeyVault(SecretUri=https://${azurerm_key_vault.shared_key_vault.name}.vault.azure.net/secrets/${azurerm_key_vault_secret.logging_app_insights_key.name}/)""" > /dev/null
+az functionapp config appsettings set -n ${azurerm_windows_function_app.fxn.name} -g ${azurerm_resource_group.rg.name} --settings "APPINSIGHTS_INSTRUMENTATIONKEY=""@Microsoft.KeyVault(SecretUri=https://${azurerm_key_vault.shared_key_vault.name}.vault.azure.net/secrets/${azurerm_key_vault_secret.logging_app_insights_key.name}/)""" > /dev/null
+az functionapp config set --net-framework-version v6.0 -n ${azurerm_windows_function_app.fxn.name} -g ${azurerm_resource_group.rg.name}
 
 echo "Deploying function code ..."
-cd ../src ; func azure functionapp publish ${azurerm_function_app.fxn.name} --csharp > /dev/null ; cd ../terraform
+cd ../src ; func azure functionapp publish ${azurerm_windows_function_app.fxn.name} --csharp > /dev/null ; cd ../terraform
 
 echo "Application Insights keys:"
 terraform state pull | jq -r '.outputs | to_entries | .[] | { instance: .key, key: .value.value } '
