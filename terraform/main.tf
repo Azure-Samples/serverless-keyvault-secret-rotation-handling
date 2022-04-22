@@ -155,7 +155,8 @@ resource "azurerm_key_vault" "shared_key_vault" {
       "get",
       "list",
       "set",
-      "delete"
+      "delete",
+      "purge"
     ]
   }
 
