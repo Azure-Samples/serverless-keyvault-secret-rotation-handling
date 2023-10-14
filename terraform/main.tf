@@ -265,7 +265,7 @@ locals {
 }
 
 resource "azurerm_resource_group_template_deployment" "logicapp" {
-  name                = "${var.prefix}-serverless-la-deployment"
+  name                = "${var.prefix}-serverless-la-deployment1"
   resource_group_name = azurerm_resource_group.rg.name
   deployment_mode     = "Incremental"
   parameters_content      = jsonencode(local.parameters_body)
